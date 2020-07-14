@@ -1,0 +1,409 @@
+---
+title: "Magic of Emotion"
+subtitle: "Sentiment Analysis Based on Tidy Data"
+author: "Nanyu Zhou"
+institute: "University of Shanghai for Science and Technology"
+date: "2020/07/16"
+output:
+  xaringan::moon_reader:
+    css: [default, zh-CN.css]
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+
+
+---
+background-image: url(https://cdn.wardzhou.art/img/DSC05679.jpg)
+background-size: cover; 
+# Self-Intro
+### Nanyu Zhou
+University of Shanghai for Science and Technology    
+**Communication**    
+
+Geek, Passionate in InformationTech, Writer and Poet, Photographer, *Intangible Cultural Heritager* , Beginner of Computational Communication, Former Assistant Directer of SMG and will join **The Paper** Data Journalism Dept next week.
+- Experts in Content Production    
+- Graphic Design    
+- Web and Client Side Development    
+- Data Journalism and Data Viz  
+
+---
+# Content
+## Part I &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A Brief Introducation
+## Part II &nbsp;&nbsp;&nbsp;&nbsp;Practice and Demo
+## Part III &nbsp;&nbsp; Extensive Resource
+
+---
+class: inverse, center, middle
+background-image: url(https://cdn.wardzhou.art/img/smiley-2979107_1920.jpg)
+background-size: cover; 
+
+# Part I
+
+### A Brief Introduction
+
+---
+# A Brief Introduction
+
+**Definition**    
+
+**Sentiment analysis** (also known as opinion mining or emotion AI) refers to the use of natural language processing, text analysis, computational linguistics, and bio-metrics to systematically identify, extract, quantify, and study affective states and subjective information.    
+--
+
+**Application**    
+- Quantitative Research
+- Public Opinion Analysis
+- Custom Client Application
+- Assess the Effect of Communication
+  - Advertisement and Marketing
+  - Political Campaign
+- Medical Field
+- ......
+
+---
+class: inverse, center, middle
+background-image: url(https://cdn.wardzhou.art/img/work-731198_1920.jpg)
+background-size: cover; 
+# Part II
+
+### Practice and Demo
+---
+
+# General Steps
+
+![](https://cdn.wardzhou.art/img/20200714002836.png)
+
+---
+# Tools & Libs
+```{r tidy=FALSE}
+library(rtweet)
+library(dplyr)
+library(tidyr)
+library(tidytext)
+library(ggplot2)
+library(echarts4r)
+```
+- `rtweet`
+Twitter Official Package with access to its API.    
+Read more on my [blog](https://wardzhou.art/2020/06/07/Rtweet).
+- `dplyr`,`tidyr`,`tidytext`    
+The three package are used to format and clean data.
+- `ggplot2`,`echarts4r`    
+Data Visualization
+---
+# Get Your Data!
+```{r message=FALSE, tidy=FALSE}
+q <- "flight safety"
+result <- search_tweets(q, n = 3200, type = "recent", include_rts = TRUE,
+                        geocode = NULL,max_id = NULL,parse = TRUE,token = NULL,)
+attributes(result)
+```
+
+---
+# Subtract text
+```{r message=FALSE, tidy=FALSE}
+#Substract text
+text_df <- tibble(text=result$text)
+text_df <- text_df %>%
+  unnest_tokens(word,text)
+text_df
+```
+
+---
+# Stop Word
+```{r message=FALSE, tidy=FALSE}
+data("stop_words")
+text_df <- text_df %>%
+  anti_join(stop_words)
+text_df
+```
+
+---
+# Custom Stop Word
+```{r message=FALSE, tidy=FALSE}
+stopwd <- data.frame(word = c('t.co','https','http'))
+text_df <- text_df %>%
+  anti_join(stopwd)
+text_df
+```
+
+---
+# Clean it up!
+```{r message=FALSE, tidy=FALSE}
+#Remove non-english word
+text_df <- text_df[which(!grepl("[^\x01-\x7F]+", text_df$word)),]
+#Remove numb
+text_df1 <- gsub("[[:digit:]]*", "", text_df$word)
+#Remove short word
+text_df1 <- text_df1[!nchar(text_df1) < 2]
+text_df1
+```
+
+---
+# Word Freq
+.pull-left[
+```r
+data.frame(word=text_df1) %>%
+  count(word, sort = TRUE) %>%
+  filter(n > 100) %>%
+  mutate(word = reorder(word,n)) %>%
+  ggplot(aes(word,n)) +
+  geom_col() + 
+  xlab(NULL) +
+  coord_flip()
+```
+]
+.pull-right[
+```{r echo=FALSE, message=FALSE, tidy=FALSE}
+data.frame(word=text_df1) %>%
+  count(word, sort = TRUE) %>%
+  filter(n > 200) %>%
+  mutate(word = reorder(word,n)) %>%
+  ggplot(aes(word,n)) +
+  geom_col() + 
+  xlab(NULL) +
+  coord_flip()
+```
+]
+---
+# WordCloud
+```{r echo=FALSE, message=FALSE, tidy=FALSE}
+data.frame(word=text_df1) %>%
+  count(word, sort = TRUE) %>%
+  #filter(n > 100) %>%
+  mutate(word = reorder(word,n)) %>%
+  e_color_range(n, color) %>% 
+  e_chart(word)%>%
+  e_cloud(word,n,shape = "circle",color) %>%
+  e_tooltip()
+```
+
+---
+class: inverse, center, middle
+background-image: url(https://cdn.wardzhou.art/img/laugh-3673836_1920.jpg)
+background-size: cover; 
+# Sentiment Analysis
+
+### Jump in!
+
+---
+# Universal Dictionaries
+- AFINN(Finn Arup Nielsen)
+- Bing(Bing Liu and coworkers)
+- NRC(Saif Monhammad and Peter Turney)
+
+The three are all dictionaries based on singal word.
+.pull-left[
+```{r echo=TRUE, message=FALSE, tidy=FALSE}
+get_sentiments('afinn')
+```
+]
+.pull-right[
+```{r echo=TRUE, message=FALSE, tidy=FALSE}
+get_sentiments('bing')
+```
+]
+
+---
+# Universal Dictionary
+.pull-left[
+```{r echo=TRUE, message=FALSE, tidy=FALSE}
+get_sentiments('nrc')
+```
+]
+.pull-right[
+```{r echo=TRUE, message=FALSE, tidy=FALSE}
+#Happy word contained
+nrcjoy <- get_sentiments('nrc') %>%
+  filter(sentiment == 'joy')
+nrcjoy
+```
+]
+
+---
+# Analyze Tweets with Bing
+```{r include=FALSE}
+df <- data.frame(word=text_df1)
+df <- df %>%
+  inner_join(get_sentiments('bing')) %>%
+  count(word, sentiment) %>%
+  spread(sentiment,n,fill = 0) %>%
+  mutate(sentiment = positive - negative)
+
+df$extra <- df$sentiment
+df$positive1 <- df$positive
+df$negative1 <- df$negative
+df$orit <- 'T'
+df$orit[df$sentiment < 0]<- 'F'
+```
+```r
+df <- data.frame(word=text_df1)
+df <- df %>%
+  inner_join(get_sentiments('bing')) %>%
+  count(word, sentiment) %>%
+  spread(sentiment,n,fill = 0) %>%
+  mutate(sentiment = positive - negative)
+```
+
+---
+# Comparison
+```{r echo=FALSE}
+df %>% 
+  e_chart(word) %>%
+  e_scatter(positive,positive1) %>%
+  e_scatter(negative,negative1 ,x_index = 1, y_index = 1) %>%
+  e_grid(width = "35%") %>%
+  e_grid(width = "35%",left = "55%") %>%
+  e_y_axis(gridIndex = 1) %>% # put x and y on grid index 1
+  e_x_axis(gridIndex = 1) %>%
+  e_tooltip()
+```
+
+---
+# Distribution
+```{r echo=FALSE}
+df %>% 
+  e_chart(word) %>%
+  e_scatter(sentiment,extra) %>%
+  e_tooltip()
+```
+---
+# WordCloud
+```{r echo=FALSE}
+df %>%
+  e_color_range(sentiment, color) %>% 
+  e_chart(word)%>%
+  e_cloud(word,sentiment,shape = "circle",color, sizeRange = c(10, 50)) %>%
+  e_tooltip()
+```
+---
+class: inverse, center, middle
+
+# Everything seems to be alright.    However......
+
+---
+# However...
+Entry could be of great help. However,when analyzing other kind of Unit of text, it might be tricky.    
+
+
+### "I am not having a good day."
+
+It's a negative sentence.   
+But the old way does not work now.
+
+Why not meet some new friends XD?
+
+---
+# New Friends
+The Three R packages that helps to analyze the complete sentence.
+- coreNLP(Arnold and Tilton, 2016)
+- cleanNLP(Arnold, 2016)
+- sentimentr(Rinker, 2017)
+
+```{r}
+library(sentimentr)
+library(gutenbergr)
+
+tidy_books <- gutenberg_download(c(1260))
+Jane <- tidy_books  %>%
+  unnest_tokens(sentence,
+                text,
+                token="regex",
+                pattern="Chapter|CHAPTER [\\dIVXLC]")%>%
+  ungroup()
+mytext <- Jane$sentence
+mytext <- get_sentences(mytext)
+JaneMustHappy <- sentiment(mytext)
+
+```
+---
+```{r echo=FALSE}
+JaneMustHappy$index <- row.names(JaneMustHappy)
+
+JaneMustHappy %>%
+  e_chart(index) %>%
+  e_line(sentiment) %>%
+  e_tooltip() %>%
+  e_datazoom(type = "slider") 
+
+```
+---
+class: inverse, center, middle
+background-image: url(https://cdn.wardzhou.art/img/winner-1548239_1920.jpg)
+background-size: cover; 
+
+# How Excitied!
+### But we could achieve more!
+#### President Selection, Nobel Prize, Potential Star, everything could be predictable.
+
+---
+class: inverse, center, middle
+
+# Part III
+
+### Extensive Resource
+
+---
+# 中文文本
+- 中文分词与西文有着较大不同，可以通过 `jiebaR`包完成分词。
+- 针对不同领域的文本，可以使用自定义词典来辅助分词（jiebaR包本身内置数个词典）
+  - 自定义词典可通过输入法供应商（如搜狗）快速获取，由细胞词库制作词典
+- 情绪识别词典主要有下面几个
+  - [SentiWordNet](https://github.com/aesuli/sentiwordnet)
+  - [知网词典](http://www.keenage.com/html/c_index.html)
+  - 中文情感极性词典 NTUSD
+  - ......
+- 中文文本的清洗大致操作思路与西文相同
+
+
+---
+# A 996 Way
+Let's get back to the beginning.     
+We now know that Sentiment Analysis is relevent to Netural Language Process and Machine learning.    
+
+The tools we uss today are merely pieces of puzzle, and we make it together to see the whole picture through the data.    
+
+But every piece is actually much more complex, and requires efforts both from human and machine.    
+
+A self-built model could be more transparent and convencining in application. 
+
+
+---
+# A 955 Way
+#### Tired of endless coding and torturing bugs?
+An API or Open Platform could be a fast and reliable way sometimes for you.
+
+Here are some magic resource you may be  interged.
+
+- Bidu API 
+  - 10w per day for free
+  - 6 languages supported
+- Tencent API
+- [Microsoft Azure API](https://link.zhihu.com/?target=https%3A//docs.microsoft.com/en-gb/azure/cognitive-services/Text-Analytics/overview)
+- IBM Watson Tone Analyzer API
+- ......
+
+
+---
+#Final Thanks
+- Dr.Cai
+- The Second Military Medical University
+- University of Shanghai for Science and Technology
+
+## Reference
+- Wiki Sentiment Analysis
+- *Text Mining with R* by Julia Silge and David Robinson(2017)
+  - [Ebook link](https://www.tidytextmining.com/)
+- [sentimentr Cran](https://cran.r-project.org/web/packages/sentimentr/readme/README.html)
+
+This slide is knitted by [**xaringan**](https://github.com/yihui/xaringan).
+
+---
+class: inverse, left, middle
+background-image: url(https://cdn.wardzhou.art/img/business-1730089_1280.jpg)
+background-size: cover; 
+
+# If you torture the data long enough, it will confess to anything.
+
+### Ronald H. Coase

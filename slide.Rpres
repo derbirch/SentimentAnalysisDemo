@@ -1,0 +1,84 @@
+Sentiment Analysis Based on Tidy Data
+========================================================
+author: Nanyu Zhou
+date: 2020-07
+autosize: true
+
+Content
+========================================================
+
+# Part 1 Self-Introduction
+# Part 2 Sentiment Analysis
+# Part 3 Demo
+# Part 4 Extensive Resource
+
+Part 1 Self-Introduction
+========================================================
+# Nanyu Zhou
+## University of Shanghai for Science and Technology
+## Communication
+
+- Experts in Content Production    
+- Graphic Design    
+- Web and Client Side Development    
+- Data Journalism and Data Viz
+
+## Less but the Same Important Skills
+
+- Filming and Photography (Documentary and Nature)
+- Intangible Cultural Heritage
+- Poet
+
+Part 2 Sentiment Analysis
+========================================================
+```{r echo=TRUE, warning=FALSE}
+library(rtweet)
+q <- "LGBTQ"
+result <- search_tweets(
+  q,
+  n = 3200,
+  type = "recent",
+  include_rts = TRUE,
+  geocode = NULL,
+  max_id = NULL,
+  parse = TRUE,
+  token = NULL,
+)
+result 
+```
+
+
+Part 2 Sentiment Analysis
+========================================================
+```{r echo=TRUE, warning=FALSE}
+library(rtweet)
+q <- "LGBTQ"
+result <- search_tweets(
+  q,
+  n = 3200,
+  type = "recent",
+  include_rts = TRUE,
+  geocode = NULL,
+  max_id = NULL,
+  parse = TRUE,
+  token = NULL,
+)
+result 
+```
+
+
+Slide With Code
+========================================================
+
+```{r}
+summary(cars)
+```
+
+Slide With Plot
+========================================================
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
+
